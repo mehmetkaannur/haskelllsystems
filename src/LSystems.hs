@@ -17,33 +17,36 @@ type ColouredLine = (Vertex, Vertex, Colour)
 
 -- Returns the rotation angle for the given system.
 angle :: LSystem -> Float
-angle = undefined
-
+angle (LSystem x _ _) = x
 -- Returns the axiom string for the given system.
 axiom :: LSystem -> [Char]
-axiom = undefined
+axiom (LSystem _ x _) = x
 
 -- Returns the set of rules for the given system.
 rules :: LSystem -> Rules Char
-rules = undefined
+rules (LSystem _ _ x) = x
 
 --
 -- Pre: the character has a binding in the Rules list
 --
 lookupChar :: Rules a -> Char -> [a]
-lookupChar = undefined
+lookupChar (x:xs) b
+  | fst x == b = snd x
+  | otherwise = lookupChar xs b
 
 --
 -- Expand command string s once using rule table r
 --
 expandOne :: Rules Char -> [Char] -> [Char]
-expandOne = undefined
+expandOne _ [] = []
+expandOne x (y:ys) = lookupChar x y ++ expandOne x ys
 
 --
 -- Expand command string s n times using rule table r
 --
 expand :: [Char] -> Int -> Rules Char -> [Char]
-expand = undefined
+expand x 0 _ = x
+expand x a b = expand (expandOne b x) (a-1) b
 
 -- Move a turtle.
 --
@@ -51,10 +54,20 @@ expand = undefined
 -- L rotates left according to the given angle.
 -- R rotates right according to the given angle.
 move :: Command -> Float -> TurtleState -> TurtleState
-move = undefined
+move R degree ((x, y), theta) = ((x, y), theta - degree)
+move L degree ((x, y), theta) = ((x, y), theta + degree)
+move F degree ((x, y), theta) = ((x+cos(rad), y + sin(rad)), theta)
+  where
+    rad = (pi*theta)/180.0
 
 parse :: Rules Command -> [Char] -> [Command]
-parse = undefined
+parse commandMap [] = []
+parse commandMap (x:xs)
+  | x == '[' = B parse commandMap inbrac : (parse commandMap outbrac)
+  | otherwise = (lookupChar commandMap x) ++ (parse commandMap xs)
+  where
+    inbrac = takeWhile (']' /=) xs
+    outbrac = dropWhile (']' /=) xs
 
 trace1 :: [Command] -> Float -> Colour -> [ColouredLine]
 trace1 = undefined
