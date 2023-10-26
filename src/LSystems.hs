@@ -10,6 +10,7 @@ data LSystem = LSystem Float [Char] (Rules Char)
 type Vertex = (Float, Float)
 type TurtleState = (Vertex, Float)
 data Command = F | L | R | B [Command]
+  deriving Show
 type ColouredLine = (Vertex, Vertex, Colour)
 
 ----------------------------------------------------------
@@ -30,6 +31,7 @@ rules (LSystem _ _ x) = x
 -- Pre: the character has a binding in the Rules list
 --
 lookupChar :: Rules a -> Char -> [a]
+lookupChar [] _ = []
 lookupChar (x:xs) b
   | fst x == b = snd x
   | otherwise = lookupChar xs b
@@ -63,14 +65,21 @@ move F degree ((x, y), theta) = ((x+cos(rad), y + sin(rad)), theta)
 parse :: Rules Command -> [Char] -> [Command]
 parse commandMap [] = []
 parse commandMap (x:xs)
-  | x == '[' = B parse commandMap inbrac : (parse commandMap outbrac)
+  | x == '[' = B (parse commandMap inbrac) : (parse commandMap outbrac)
   | otherwise = (lookupChar commandMap x) ++ (parse commandMap xs)
   where
     inbrac = takeWhile (']' /=) xs
     outbrac = dropWhile (']' /=) xs
 
 trace1 :: [Command] -> Float -> Colour -> [ColouredLine]
-trace1 = undefined
+trace1 (x:xs) a c = helper [x] 90 (0.0,0.0) : trace1 xs a c
+  where
+    helper :: [Command] -> Float -> TurtleState -> ColouredLine
+    helper [F] b d = (fst d, fst (move F (b+a) d), c)
+    helper [L] b d = (fst d, fst (move L (b-a) d), c)
+    helper [R] b d = (fst d, fst (move R (b+a) d), c)
+    helper [B (y:ys)] b d = helper [y] b d
+    helper [] _ _  = []
 
 -- This version uses an explicit stack of residual commands and turtle states
 trace2 :: [Command] -> Float -> Colour -> [ColouredLine]
