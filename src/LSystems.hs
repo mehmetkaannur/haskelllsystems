@@ -60,7 +60,7 @@ move R degree ((x, y), theta) = ((x, y), theta - degree)
 move L degree ((x, y), theta) = ((x, y), theta + degree)
 move F degree ((x, y), theta) = ((x+cos(rad), y + sin(rad)), theta)
   where
-    rad = (pi*theta)/180.0
+    rad = pi*(theta/180.0)
 
 parse :: Rules Command -> [Char] -> [Command]
 parse commandMap [] = []
@@ -72,18 +72,38 @@ parse commandMap (x:xs)
     outbrac = dropWhile (']' /=) xs
 
 trace1 :: [Command] -> Float -> Colour -> [ColouredLine]
-trace1 (x:xs) a c = helper [x] 90 (0.0,0.0) : trace1 xs a c
+trace1 xs a c = helper xs a c ((0.0,0.0), 90)
   where
-    helper :: [Command] -> Float -> TurtleState -> ColouredLine
-    helper [F] b d = (fst d, fst (move F (b+a) d), c)
-    helper [L] b d = (fst d, fst (move L (b-a) d), c)
-    helper [R] b d = (fst d, fst (move R (b+a) d), c)
-    helper [B (y:ys)] b d = helper [y] b d
-    helper [] _ _  = []
+    helper :: [Command] -> Float -> Colour -> TurtleState -> [ColouredLine]
+    helper [] _ _ _ = []
+    helper (F:xs) a c p@(v,f) = (v, t, c) : helper xs a c new
+      where
+        new@(t, _) = move F a p
+    helper (R:xs) a c p@(v,f) = helper xs a c new
+      where
+        new = move R a p
+    helper (L:xs) a c p@(v,f) = helper xs a c new
+      where
+        new = move L a p
+    helper ((B cs):xs) a c p@(v,f) = helper cs a c p ++ helper xs a c p
 
 -- This version uses an explicit stack of residual commands and turtle states
 trace2 :: [Command] -> Float -> Colour -> [ColouredLine]
-trace2 = undefined
+trace2 xs a c = helper xs ((0.0,0.0), 90) [] a c
+  where
+    helper :: [Command] -> TurtleState -> [([Command], TurtleState)] -> Float -> Colour -> [ColouredLine]
+    helper [] _ [] _ _ = []
+    helper [] _ ((ys, t): qs) a c = helper ys t qs a c
+    helper (F:xs) p@(v,f) s a c  = (v, t, c) : helper xs new s a c
+      where
+        new@(t, _) = move F a p
+    helper (R:xs) p@(v,f) s a c  = helper xs new s a c
+      where
+        new = move R a p
+    helper (L:xs) p@(v,f) s a c  = helper xs new s a c
+      where
+        new = move L a p
+    helper ((B cs):xs) p@(v,f) s a c  = helper cs p ((xs, p):s) a c
 
 -- Provided Functions
 ------------------------------------------------------------------------------

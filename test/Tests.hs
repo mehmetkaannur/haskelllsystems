@@ -56,7 +56,8 @@ rulesTests = [ rules cross                       --> [ ('M', "M-M+M+MM-M-M+M")
 
 lookupCharTests :: [Assertion]
 lookupCharTests =
-  [ lookupChar [('X', "Yes"), ('Y', "No")] 'X' --> "Yes"
+  [ lookupChar [] 'A'                          --> ""
+  , lookupChar [('X', "Yes"), ('Y', "No")] 'X' --> "Yes"
   , lookupChar [('Y', "No"), ('X', "Yes")] 'X' --> "Yes"
   , lookupChar (rules peanoGosper) 'M'         --> "M+N++N-M--MM-N+"
   , lookupChar (rules triangle) '+'            --> "+"
